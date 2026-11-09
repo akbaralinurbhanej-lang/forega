@@ -1,0 +1,832 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FoRega Order Desk</title>
+<meta name="theme-color" content="#2A2661">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: phone-first desk — status strip, then tabs (Orders, Customers, Stock, Reports, Ads, Settings); bill opens as a sheet */
+:root{
+  --bg:#F6F6FB; --surface:#FFFFFF; --line:#E2E1EE; --fg:#22204A; --muted:#64627A;
+  --accent:#2A2661; --accent-ink:#FFFFFF; --accent-soft:#E9E8F4;
+  --gold:#008000; --gold-ink:#FFFFFF; --gold-soft:#E2F2E2;
+  --heart:#E01B23; --amber:#A8650B; --amber-soft:#FBEFD9;
+  --chip:#FFFFFF; --band:#FFFFFF; --band-fg:#22204A; --band-line:#2A2661;
+  --wa:#1F8F5A; --wa-ink:#FFFFFF; --wa-soft:#E2F4EA; --blue:#2D6CB5; --blue-soft:#E3EDF9; --red:#C0262D; --red-soft:#FBE4E4;
+  --scrim:rgba(20,18,50,.45);
+  --display:"Jost","Segoe UI",system-ui,sans-serif;
+  --body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121027; --surface:#1C1938; --line:#312D5A; --fg:#EEEDF7; --muted:#A3A1BD;
+  --accent:#ABA6F2; --accent-ink:#17143A; --accent-soft:#2A2752;
+  --gold:#4CC35A; --gold-ink:#0B1A0C; --gold-soft:#173019;
+  --heart:#FF6B70; --amber:#F0B35A; --amber-soft:#3A2C14;
+  --chip:#FFFFFF; --band:#1C1938; --band-fg:#EEEDF7; --band-line:#ABA6F2;
+  --wa:#4BC48A; --wa-ink:#0E1F16; --wa-soft:#163326; --blue:#79A9E6; --blue-soft:#1B2A3D; --red:#FF7A7F; --red-soft:#3A1C22;
+  --scrim:rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121027; --surface:#1C1938; --line:#312D5A; --fg:#EEEDF7; --muted:#A3A1BD;
+  --accent:#ABA6F2; --accent-ink:#17143A; --accent-soft:#2A2752;
+  --gold:#4CC35A; --gold-ink:#0B1A0C; --gold-soft:#173019;
+  --heart:#FF6B70; --amber:#F0B35A; --amber-soft:#3A2C14;
+  --chip:#FFFFFF; --band:#1C1938; --band-fg:#EEEDF7; --band-line:#ABA6F2;
+  --wa:#4BC48A; --wa-ink:#0E1F16; --wa-soft:#163326; --blue:#79A9E6; --blue-soft:#1B2A3D; --red:#FF7A7F; --red-soft:#3A1C22;
+  --scrim:rgba(0,0,0,.6); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{-webkit-text-size-adjust:100%}
+img{max-width:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:780px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+header h1{font-family:var(--display);font-weight:800;font-size:28px;margin:0;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.conn{font-size:13px;padding:8px 12px;border-radius:8px;background:var(--amber-soft);color:var(--fg)}
+.staff{font-size:13px;padding:8px 12px;border-radius:8px;background:var(--blue-soft);color:var(--blue)}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px}
+.stat b{display:block;font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+nav{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 11px;font:600 14px var(--body);color:var(--muted);cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--fg);border-color:var(--gold)}
+section{display:flex;flex-direction:column;gap:12px}
+h2{font-family:var(--display);font-weight:600;font-size:18px;margin:2px 0 0}
+h3{font-size:13px;margin:4px 0 0;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.end{align-items:flex-end}
+.grow{flex:1;min-width:0}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);flex:1;min-width:120px}
+label.sm{min-width:80px;flex:0 1 110px}
+label.chk{flex-direction:row;align-items:center;gap:8px;min-width:0;font-size:14px;color:var(--fg)}
+label.chk input{width:auto}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+textarea{min-height:130px;resize:vertical}
+.btn{font:600 13px var(--body);border-radius:8px;padding:8px 12px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg);text-decoration:none;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:var(--wa-ink)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.ghost{border-color:transparent;background:none;color:var(--muted);padding:6px 8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.p-new{background:var(--accent-soft);color:var(--accent)}
+.p-dis{background:var(--blue-soft);color:var(--blue)}
+.p-del{background:var(--wa-soft);color:var(--wa)}
+.p-due{background:var(--red-soft);color:var(--red)}
+.p-part{background:var(--amber-soft);color:var(--amber)}
+.p-paid{background:var(--wa-soft);color:var(--wa)}
+.p-can{background:var(--line);color:var(--muted)}
+.order-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.meta{font-size:13px;color:var(--muted)}
+.amt{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500}
+.lines{display:flex;flex-direction:column;gap:2px;font-size:14px}
+.lines div{display:flex;justify-content:space-between;gap:8px}
+.lines .tot{border-top:1px solid var(--line);padding-top:4px;margin-top:2px;font-weight:600}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{font:500 12px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:5px 10px;border-radius:99px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.low{color:var(--red);font-weight:600}
+.payrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--bg);border-radius:8px;padding:8px}
+.payrow input{width:110px}
+.payrow select{width:auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.kpi span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.kpi b{display:block;font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;margin-top:2px}
+.note{font-size:12px;color:var(--muted);margin:0}
+.empty{padding:20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.prodedit{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.sheet-bg{position:fixed;inset:0;background:var(--scrim);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0;padding-block:16px calc(20px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
+.bill{border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;font-size:14px;background:var(--bg)}
+.bill-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bill-head b{font-family:var(--display);font-size:20px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:13px;font-weight:600;z-index:40;max-width:90vw;text-align:center}
+.tag{font-size:11px;font-weight:600;color:var(--gold);background:var(--gold-soft);padding:2px 7px;border-radius:99px}
+/* brand band: honeycomb on mint, logo chip */
+.brand{position:relative;overflow:hidden;background:var(--band);border:1px solid var(--line);color:var(--band-fg);border-radius:16px;padding:16px 18px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.brand::before{content:"";position:absolute;inset:0;background:var(--band-line);opacity:.07;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/svg%3E") repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/svg%3E") repeat;-webkit-mask-size:28px 49px;mask-size:28px 49px;pointer-events:none}
+.brand>*{position:relative}
+.brand .grow{flex:1 1 220px}
+.logo-chip{background:var(--chip);border-radius:12px;padding:8px 12px;display:flex}
+.logo-chip img{height:56px;width:auto;display:block}
+.brand h1{font-family:var(--display);font-weight:700;font-size:26px;margin:0;letter-spacing:.01em;text-wrap:balance}
+.brand p{margin:2px 0 0;font-size:13px;opacity:.85}
+.stars{color:var(--heart);letter-spacing:.2em;font-size:11px}
+.stat span::before,.kpi span::before{content:"";display:inline-block;width:8px;height:9px;margin-right:5px;background:var(--gold);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);vertical-align:-1px}
+/* flow diagrams */
+.flow{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.flow li{display:grid;grid-template-columns:44px 1fr;gap:12px;position:relative;padding-bottom:18px;min-width:0}
+.flow li:not(:last-child)::before{content:"";position:absolute;left:21px;top:50px;bottom:4px;width:2px;background:repeating-linear-gradient(var(--gold) 0 6px,transparent 6px 10px)}
+.flow li>div{min-width:0}
+.flow b{font-family:var(--display);font-size:17px;font-weight:600}
+.flow p{margin:2px 0 6px;color:var(--muted);font-size:14px}
+.hx{width:44px;height:50px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:var(--gold);color:var(--gold-ink);display:grid;place-items:center;font:700 17px var(--display)}
+.hx.alt{background:var(--accent);color:var(--accent-ink)}
+.where{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:3px 9px;border-radius:99px}
+.branch{border:1px dashed var(--gold);border-radius:10px;padding:8px 10px;margin:4px 0 8px;font-size:13px;display:flex;flex-direction:column;gap:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.chips span{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:3px 10px;background:var(--bg)}
+.track{display:grid;grid-template-columns:1fr 18px 1fr 18px 1fr;align-items:start;gap:4px}
+.node{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0}
+.node small{font-size:12px;color:var(--muted);line-height:1.3}
+.arrow{height:24px;display:grid;place-items:center;color:var(--gold)}
+.tracklabel{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-top:4px}
+.cancel{grid-column:1;justify-self:center;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px}
+.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.level{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px;background:var(--bg)}
+.level b{font-family:var(--display);font-size:16px}
+.level .amt{font-size:18px}
+@media (max-width:520px){.strip{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head><body>
+
+<div class="wrap">
+  <header class="brand">
+    <div class="logo-chip"><img id="logo" alt="FoRega – Taste the Future of Food" src="data:image/png;base64,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"></div>
+    <div class="grow"><h1>Order Desk</h1><p><span class="stars">★★★</span> Raw · Unheated · Lab-tested honey, from beekeepers to you</p></div>
+  </header>
+  <div class="conn" id="conn">Opening your saved data…</div>
+  <div class="staff" id="staffnote" hidden>Staff view: you can receive stock, dispatch and deliver orders. Prices and reports are visible to the owner only.</div>
+
+  <div class="strip" id="strip"></div>
+
+  <nav role="tablist" id="nav"></nav>
+
+  <!-- ORDERS -->
+  <section id="tab-orders">
+    <div class="card" id="orderform" hidden>
+      <h2>New order</h2>
+      <div class="row">
+        <label>Customer name<input id="o-name" list="custlist" placeholder="Name or shop"></label>
+        <label>WhatsApp number<input id="o-phone" inputmode="tel" placeholder="10-digit mobile"></label>
+      </div>
+      <datalist id="custlist"></datalist>
+      <div class="row">
+        <label>Buyer type<select id="o-type"><option>Customer</option><option>Wholesaler</option><option>Order Partner</option></select></label>
+        <label>Address / city<input id="o-addr" placeholder="Area, city"></label>
+      </div>
+      <h3>Items</h3>
+      <div id="o-items" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div><button class="btn" id="o-additem">+ Add item</button></div>
+      <div class="row">
+        <label class="sm">Delivery ₹<input id="o-del" type="number" min="0" value="0"></label>
+        <label class="sm">Discount ₹<input id="o-disc" type="number" min="0" value="0"></label>
+        <label class="sm">Pay mode<select id="o-pay"><option>UPI</option><option>Cash</option><option>Bank</option></select></label>
+        <label class="sm">Paid now ₹<input id="o-paid" type="number" min="0" value="0"></label>
+      </div>
+      <div class="lines" id="o-sum"></div>
+      <div class="row"><span class="grow"></span><button class="btn primary" id="o-add">Save order</button></div>
+    </div>
+    <div class="row"><input id="o-search" placeholder="Search orders by name, number or order #" class="grow" style="flex:1"></div>
+    <div class="filters" id="filters"></div>
+    <div id="orders" style="display:flex;flex-direction:column;gap:10px"></div>
+  </section>
+
+  <!-- CUSTOMERS -->
+  <section id="tab-customers" hidden>
+    <input id="c-search" placeholder="Search name or number">
+    <div class="filters" id="c-filters"></div>
+    <div id="customers" style="display:flex;flex-direction:column;gap:10px"></div>
+  </section>
+
+  <!-- STOCK -->
+  <section id="tab-stock" hidden>
+    <div class="card">
+      <h2>Stock in hand</h2>
+      <p class="note">Jars go down automatically when an order is dispatched. Each product has its own low-stock limit.</p>
+      <div class="tbl"><table><thead id="stock-head"></thead><tbody id="stock-body"></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>Add stock</h2>
+      <div class="row">
+        <label>Product<select id="s-prod"></select></label>
+        <label class="sm">Jars<input id="s-qty" type="number" min="1" value="20"></label>
+        <label>Source<select id="s-src"><option>Own harvest</option><option>Bought from beekeeper</option></select></label>
+      </div>
+      <div class="row">
+        <label>Batch no.<input id="s-batch" placeholder="e.g. KSH-NOV-01"></label>
+        <label>Lab report no.<input id="s-lab" placeholder="Report number"></label>
+      </div>
+      <div class="row" id="s-buyrow" hidden>
+        <label>Beekeeper / seller<input id="s-seller" placeholder="Seller name"></label>
+        <label class="sm">Kg bought<input id="s-kg" type="number" min="0" step="0.1"></label>
+        <label class="sm">Total paid ₹<input id="s-paidamt" type="number" min="0"></label>
+      </div>
+      <div class="row"><span class="grow"></span><button class="btn primary" id="s-add">Add to stock</button></div>
+    </div>
+    <div class="card">
+      <h2>Stock entries</h2>
+      <div class="tbl"><table><thead><tr><th>Date</th><th>Product</th><th class="n">Jars</th><th>Batch / Lab</th><th>Source</th></tr></thead><tbody id="s-log"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="tab-reports" hidden>
+    <div class="filters" id="r-period"></div>
+    <div class="kpis" id="r-kpis"></div>
+    <div class="card"><h2>Collected by payment mode</h2><div class="tbl"><table><tbody id="r-modes"></tbody></table></div></div>
+    <div class="card"><h2>Sales by product</h2><div class="tbl"><table><thead><tr><th>Product</th><th class="n">Jars</th><th class="n">Sales</th><th class="n">Profit*</th></tr></thead><tbody id="r-prod"></tbody></table></div><p class="note">*Profit uses the cost per jar set in Settings.</p></div>
+    <div class="card"><h2>Pending dues</h2><div class="tbl"><table><thead><tr><th>Customer</th><th class="n">Orders</th><th class="n">Due</th><th></th></tr></thead><tbody id="r-dues"></tbody></table></div></div>
+    <div class="card"><h2>Honey bought</h2><div class="tbl"><table><thead><tr><th>Date</th><th>Seller</th><th>Product</th><th class="n">Kg</th><th class="n">Paid</th></tr></thead><tbody id="r-buys"></tbody></table></div></div>
+  </section>
+
+  <!-- ADS -->
+  <section id="tab-ads" hidden>
+    <div class="card">
+      <h2>Make an ad</h2>
+      <div class="row">
+        <label>For<select id="a-list"><option>Customers</option><option>Wholesalers</option><option>Order Partners</option></select></label>
+        <label>Message type<select id="a-kind"><option value="fresh">Fresh harvest</option><option value="offer">Festival offer</option><option value="trust">Lab-tested / raw</option><option value="restock">Back in stock</option></select></label>
+      </div>
+      <div class="row">
+        <label>Product<select id="a-prod"></select></label>
+        <label class="sm">Offer %<input id="a-off" type="number" min="0" max="60" value="10"></label>
+      </div>
+      <h3>WhatsApp broadcast</h3>
+      <textarea id="a-text"></textarea>
+      <div class="row"><span class="note grow">Only people who saved your number receive broadcasts.</span><button class="btn wa" id="a-copy">Copy message</button></div>
+      <h3>Instagram / Facebook caption</h3>
+      <textarea id="a-cap"></textarea>
+      <div class="row"><span class="grow"></span><button class="btn" id="a-copycap">Copy caption</button></div>
+    </div>
+    <div class="card">
+      <h2>Broadcast list numbers</h2>
+      <p class="note" id="a-numsnote"></p>
+      <div class="row"><span class="grow"></span><button class="btn" id="a-copynums">Copy numbers</button></div>
+    </div>
+  </section>
+
+  <!-- FLOW -->
+  <section id="tab-flow" hidden>
+    <div class="card">
+      <h2>From hive to home</h2>
+      <p class="note">How FoRega honey moves, and where each step lives in this desk.</p>
+      <ol class="flow">
+        <li><span class="hx">1</span><div><b>Hives</b><p>About 250 bee boxes, migrated between Gujarat and Kashmir. Workers inspect and feed the colonies.</p></div></li>
+        <li><span class="hx">2</span><div><b>Harvest</b><p>Honey is taken from our own boxes.</p>
+          <div class="branch"><strong>Also bought from other beekeepers</strong><span class="meta">Record the seller, kg and amount paid when you add stock.</span></div>
+          <span class="where">Stock → Add stock</span></div></li>
+        <li><span class="hx">3</span><div><b>Lab test and batch</b><p>Each lot gets a batch number and a lab report number, so any jar can be traced.</p><span class="where">Stock → Batch no. and Lab report no.</span></div></li>
+        <li><span class="hx">4</span><div><b>Bottling</b><p>Raw and unheated, packed in jars with the batch number, packing date and best-before on the label.</p><span class="where">Stock → jars in</span></div></li>
+        <li><span class="hx alt">5</span><div><b>Order on WhatsApp</b><p>Every buyer type has its own price.</p>
+          <div class="chips"><span>Customer</span><span>Wholesaler</span><span>Order Partner</span></div>
+          <span class="where">Orders → New order</span></div></li>
+        <li><span class="hx alt">6</span><div><b>Dispatch</b><p>Jars come off stock automatically. Send the dispatch message and the bill.</p><span class="where">Orders → Mark dispatched · Bill</span></div></li>
+        <li><span class="hx alt">7</span><div><b>Delivered</b><p>Collect any balance, ask for a review and share it on WhatsApp Status.</p><span class="where">Orders → Mark delivered · Ads</span></div></li>
+      </ol>
+      <p class="note">Green steps happen at the hives. Navy steps happen on WhatsApp.</p>
+    </div>
+    <div class="card">
+      <h2>Order and payment flow</h2>
+      <div class="tracklabel">Order</div>
+      <div class="track">
+        <div class="node"><span class="pill p-new">New</span><small>Send order confirmation</small></div><span class="arrow" aria-hidden="true"><svg width="18" height="12" viewBox="0 0 18 12"><path d="M0 6h14M10 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
+        <div class="node"><span class="pill p-dis">Dispatched</span><small>Stock goes down. Send dispatch message</small></div><span class="arrow" aria-hidden="true"><svg width="18" height="12" viewBox="0 0 18 12"><path d="M0 6h14M10 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
+        <div class="node"><span class="pill p-del">Delivered</span><small>Ask for a review</small></div>
+        <div class="cancel"><svg width="2" height="14" aria-hidden="true"><line x1="1" y1="0" x2="1" y2="14" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"/></svg><span class="pill p-can">Cancelled</span><small>Only before dispatch</small></div>
+      </div>
+      <div class="tracklabel">Payment</div>
+      <div class="track">
+        <div class="node"><span class="pill p-due">Due</span><small>Nothing paid yet</small></div><span class="arrow" aria-hidden="true"><svg width="18" height="12" viewBox="0 0 18 12"><path d="M0 6h14M10 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
+        <div class="node"><span class="pill p-part">Part paid</span><small>Some paid. Balance shows on the order</small></div><span class="arrow" aria-hidden="true"><svg width="18" height="12" viewBox="0 0 18 12"><path d="M0 6h14M10 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
+        <div class="node"><span class="pill p-paid">Paid</span><small>Cash, UPI or Bank</small></div>
+      </div>
+      <p class="note">Order status and payment move separately. A wholesaler can receive the jars first and pay the balance later.</p>
+    </div>
+    <div class="card" id="levelscard">
+      <h2>Who buys, and at what price</h2>
+      <div class="levels" id="levels"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" hidden>
+    <div class="card">
+      <h2>Business details</h2>
+      <div class="row"><label>Brand name<input id="g-biz"></label><label>Company<input id="g-co"></label></div>
+      <div class="row"><label>Address<input id="g-addr"></label><label>Phone<input id="g-phone" inputmode="tel"></label></div>
+      <div class="row"><label>Email<input id="g-email" inputmode="email"></label><label>FSSAI licence no.<input id="g-fssai" inputmode="numeric"></label></div>
+      <div class="row"><label>UPI ID<input id="g-upi" placeholder="name@bank"></label><label>Bank details<input id="g-bank" placeholder="A/c name, A/c no., IFSC"></label></div>
+      <div class="row end"><label class="sm">Bill prefix<input id="g-prefix"></label><label>GSTIN<input id="g-gstin" placeholder="Add after registration"></label><label class="chk"><input type="checkbox" id="g-gston"> Show GST on bills</label></div>
+      <div class="row"><span class="note grow">Confirm the GST rate and HSN code for honey with your CA before turning GST on.</span><button class="btn primary" id="g-save">Save details</button></div>
+    </div>
+    <div class="card">
+      <h2>Products and prices</h2>
+      <div id="p-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="row"><button class="btn" id="p-new">+ Add product</button><span class="grow"></span><button class="btn primary" id="p-save">Save products</button></div>
+    </div>
+    <div class="card">
+      <h2>Backup and restore</h2>
+      <p class="note">All your data is saved on this phone only. Take a backup every week and send the file to your Google Drive or your own WhatsApp, so nothing is lost if the phone breaks or the app is removed.</p>
+      <div class="row"><button class="btn primary" id="bk-save">Back up now</button><span class="meta grow" id="bk-last"></span></div>
+      <div class="row end"><label>Restore from a backup file<input type="file" id="bk-file" accept="application/json,.json"></label><button class="btn danger" id="bk-restore" disabled>Restore</button></div>
+      <p class="note">Restoring replaces everything in the app with the backup file.</p>
+    </div>
+  </section>
+</div>
+<div id="sheet" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* MiniPDF: small built-in PDF maker for bills (no internet needed). Same calls as jsPDF for what the bill uses. */
+class MiniPDF{
+  constructor(o){this.k=72/25.4;this.W=148*this.k;this.H=210*this.k;this.ops=[];this.font="F1";this.size=16;this.img=null;}
+  setFont(_n,style){this.font=style==="bold"?"F2":"F1";}
+  setFontSize(n){this.size=n;}
+  setFillColor(){} roundedRect(){}
+  _enc(t){const m={"–":150,"—":151,"•":149,"’":146,"‘":145,"“":147,"”":148,"€":128};let o="";for(const ch of String(t)){let c=ch.charCodeAt(0);if(m[ch])c=m[ch];else if(c>255)c=63;const s=String.fromCharCode(c);o+=(s==="("||s===")"||s==="\\")?"\\"+s:s;}return o;}
+  _w(t){let w=0;for(const ch of String(t)){let u;if("iljI.,:;!|' ".includes(ch))u=278;else if("frt-()".includes(ch))u=333;else if("mM".includes(ch))u=833;else if("wW".includes(ch))u=ch==="w"?722:944;else if(/[A-Z]/.test(ch))u=690;else if(/[0-9]/.test(ch))u=556;else u=540;if(this.font==="F2")u*=1.06;w+=u;}return w/1000*this.size/this.k;}
+  splitTextToSize(t,maxW){const words=String(t).split(" ");const lines=[];let cur="";for(const w of words){const n=cur?cur+" "+w:w;if(this._w(n)>maxW&&cur){lines.push(cur);cur=w;}else cur=n;}if(cur)lines.push(cur);return lines;}
+  text(t,x,y,opt){const s=String(t);let X=x;if(opt&&opt.align==="right")X=x-this._w(s);else if(opt&&opt.align==="center")X=x-this._w(s)/2;
+    this.ops.push(`BT /${this.font} ${this.size} Tf ${(X*this.k).toFixed(2)} ${(this.H-y*this.k).toFixed(2)} Td (${this._enc(s)}) Tj ET`);}
+  line(x1,y1,x2,y2){this.ops.push(`0.6 w ${(x1*this.k).toFixed(2)} ${(this.H-y1*this.k).toFixed(2)} m ${(x2*this.k).toFixed(2)} ${(this.H-y2*this.k).toFixed(2)} l S`);}
+  addImage(src,_t,x,y,w,h){
+    const img=typeof src==="string"?Object.assign(new Image(),{src}):src;
+    const c=document.createElement("canvas");const sc=3;c.width=Math.round(w*sc*this.k/2.2);c.height=Math.round(h*sc*this.k/2.2);
+    const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
+    const b64=c.toDataURL("image/jpeg",0.92).split(",")[1];this.img={bin:atob(b64),w:c.width,h:c.height};
+    this.ops.push(`q ${(w*this.k).toFixed(2)} 0 0 ${(h*this.k).toFixed(2)} ${(x*this.k).toFixed(2)} ${(this.H-(y+h)*this.k).toFixed(2)} cm /Im1 Do Q`);}
+  output(){
+    const objs=[];const content=this.ops.join("\n");
+    objs.push("<< /Type /Catalog /Pages 2 0 R >>");
+    objs.push("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+    objs.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${this.W.toFixed(2)} ${this.H.toFixed(2)}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >>${this.img?" /XObject << /Im1 7 0 R >>":""} >> /Contents 6 0 R >>`);
+    objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+    objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+    objs.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+    if(this.img)objs.push(`<< /Type /XObject /Subtype /Image /Width ${this.img.w} /Height ${this.img.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${this.img.bin.length} >>\nstream\n${this.img.bin}\nendstream`);
+    let out="%PDF-1.4\n%\xE2\xE3\xCF\xD3\n";const offs=[];
+    objs.forEach((o,i)=>{offs.push(out.length);out+=`${i+1} 0 obj\n${o}\nendobj\n`;});
+    const x=out.length;out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+offs.map(o=>String(o).padStart(10,"0")+" 00000 n \n").join("");
+    out+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R >>\nstartxref\n${x}\n%%EOF`;
+    const bytes=new Uint8Array(out.length);for(let i=0;i<out.length;i++)bytes[i]=out.charCodeAt(i)&255;
+    return new Blob([bytes],{type:"application/pdf"});
+  }
+}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rs=n=>"₹"+Math.round(+n||0).toLocaleString("en-IN");
+const num=n=>Math.round(+n||0);
+const LV={"Customer":"c","Wholesaler":"w","Order Partner":"p"};
+const D={cfg:{},products:{},prices:{},customers:{},orders:{},money:{},stockin:{},buys:{}};
+let db=null, admin=false, dl=null, loadTimer=null;
+let tab="orders", ofilter="All", cfilter="All", period="month", dirtySettings=false, confirmDel=null;
+let formItems=[{pid:"",qty:1}];
+
+const fmtD=at=>at?new Date(at).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}):"";
+const nowISO=()=>new Date().toISOString();
+const prodName=pid=>D.products[pid]?.name||"Removed product";
+const prodList=()=>Object.entries(D.products).filter(([,p])=>p.active!==false).sort((a,b)=>(a[1].order??0)-(b[1].order??0)||a[1].name.localeCompare(b[1].name));
+const rate=(pid,type)=>num(D.prices[pid]?.[LV[type]||"c"]);
+const paidOf=m=>(m?.payments||[]).reduce((a,p)=>a+num(p.amt),0);
+const balOf=m=>m?num(m.total)-paidOf(m):0;
+const waNum=ph=>{let d=String(ph||"").replace(/\D/g,"");if(d.length===11&&d[0]==="0")d=d.slice(1);if(d.length===10)d="91"+d;return d.length>=11?d:"";};
+const waLink=(ph,t)=>`https://wa.me/${waNum(ph)}?text=${encodeURIComponent(t)}`;
+const biz=()=>D.cfg.bizName||"FoRega Honey";
+const inv=no=>`${D.cfg.prefix||"FRG"}-${no}`;
+
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2200);}
+async function copy(text,done){try{await navigator.clipboard.writeText(text);toast(done||"Copied");}catch(e){toast("Copy is blocked here. Select the text and copy it.");}}
+function errText(e){const c=e&&e.code;if(c==="invalid_argument")return "You don't have permission to change this.";if(c==="quota_exceeded")return "Storage is full. Delete some old entries.";if(c==="revoked")return "Access to this page changed. Reload it.";return "Couldn't save. Check your connection and try again.";}
+async function W(fn,ok){try{await fn();if(ok)toast(ok);return true;}catch(e){toast(errText(e));return false;}}
+function setConn(t){$("conn").textContent=t;$("conn").hidden=!t;}
+
+/* ---------- rendering ---------- */
+let rq=0;function schedule(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;renderAll();});}
+function renderAll(){renderNav();renderStrip();refreshProdSelects();renderCustList();renderFormSum();
+  if(tab==="orders")renderOrders();if(tab==="customers")renderCustomers();if(tab==="stock")renderStock();
+  if(tab==="reports")renderReports();if(tab==="ads")renderAds();if(tab==="flow")renderLevels();if(tab==="settings"&&!dirtySettings)renderSettings();}
+
+function renderNav(){
+  const tabs=admin?[["orders","Orders"],["customers","Customers"],["stock","Stock"],["reports","Reports"],["ads","Ads"],["flow","Flow"],["settings","Settings"]]:[["orders","Orders"],["stock","Stock"],["flow","Flow"]];
+  $("nav").innerHTML=tabs.map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${k===tab}">${l}</button>`).join("");
+  ["orders","customers","stock","reports","ads","flow","settings"].forEach(t=>$("tab-"+t).hidden=t!==tab);
+}
+function renderStrip(){
+  const os=Object.values(D.orders);const c=s=>os.filter(o=>o.status===s).length;
+  const cells=[["New",c("New")],["Dispatched",c("Dispatched")],["Delivered",c("Delivered")]];
+  if(admin){const due=os.filter(o=>o.status!=="Cancelled").reduce((a,o)=>a+Math.max(0,balOf(D.money[o.no])),0);cells.push(["Dues",rs(due)]);}
+  else cells.push(["Low stock",prodList().filter(([,p])=>num(p.stock)<=num(p.lowAt??10)).length]);
+  $("strip").innerHTML=cells.map(([k,v])=>`<div class="stat"><b>${v}</b><span>${k}</span></div>`).join("");
+}
+function refreshProdSelects(){
+  const opts=prodList().map(([id,p])=>`<option value="${id}">${esc(p.name)}</option>`).join("");
+  ["s-prod","a-prod"].forEach(id=>{const v=$(id).value;$(id).innerHTML=opts;if(v&&D.products[v])$(id).value=v;});
+  renderFormItems();
+}
+function renderCustList(){$("custlist").innerHTML=Object.values(D.customers).map(c=>`<option value="${esc(c.name)}">${esc(c.phone)} · ${esc(c.type)}</option>`).join("");}
+
+/* --- order form --- */
+function renderFormItems(){
+  const list=prodList();if(!list.length){$("o-items").innerHTML=`<p class="note">Add products in Settings first.</p>`;return;}
+  formItems.forEach(i=>{if(!D.products[i.pid])i.pid=list[0][0];});
+  const type=$("o-type").value;
+  const active=document.activeElement;const focusIdx=active&&active.dataset&&active.dataset.fi!==undefined?active.dataset.fi:null;const focusKind=active?.dataset?.fk;
+  $("o-items").innerHTML=formItems.map((it,i)=>`<div class="row end">
+    <label>Product<select data-fi="${i}" data-fk="pid">${list.map(([id,p])=>`<option value="${id}" ${id===it.pid?"selected":""}>${esc(p.name)} · ${rs(rate(id,type))}</option>`).join("")}</select></label>
+    <label class="sm">Qty<input data-fi="${i}" data-fk="qty" type="number" min="1" value="${it.qty}"></label>
+    ${formItems.length>1?`<button class="btn ghost" data-rm="${i}" aria-label="Remove item">Remove</button>`:""}</div>`).join("");
+  if(focusIdx!==null){const el=$("o-items").querySelector(`[data-fi="${focusIdx}"][data-fk="${focusKind}"]`);if(el){el.focus();}}
+}
+function formCalc(){
+  const type=$("o-type").value;const lines=formItems.filter(i=>D.products[i.pid]&&num(i.qty)>0).map(i=>({pid:i.pid,qty:num(i.qty),rate:rate(i.pid,type)}));
+  const sub=lines.reduce((a,l)=>a+l.qty*l.rate,0);const del=num($("o-del").value),disc=num($("o-disc").value);
+  return{type,lines,sub,del,disc,total:Math.max(0,sub+del-disc)};
+}
+function renderFormSum(){
+  const f=formCalc();
+  $("o-sum").innerHTML=`<div><span>Items</span><span class="amt">${rs(f.sub)}</span></div>${f.del?`<div><span>Delivery</span><span class="amt">+ ${rs(f.del)}</span></div>`:""}${f.disc?`<div><span>Discount</span><span class="amt">− ${rs(f.disc)}</span></div>`:""}<div class="tot"><span>Total</span><span class="amt">${rs(f.total)}</span></div>`;
+}
+
+/* --- messages --- */
+function itemsText(o,withPrice){
+  const m=D.money[o.no];
+  return (o.items||[]).map(it=>{const l=m?.lines?.find(x=>x.pid===it.pid);return `• ${prodName(it.pid)} × ${it.qty}${withPrice&&l?` = ${rs(l.qty*l.rate)}`:""}`;}).join("\n");
+}
+function payText(m){
+  if(!m)return "";const bal=balOf(m);
+  if(bal<=0)return "Payment received, thank you 🙏";
+  const upi=D.cfg.upi?`\nUPI: ${D.cfg.upi}`:"";const bank=D.cfg.bank?`\nBank: ${D.cfg.bank}`:"";
+  return `Amount due: ${rs(bal)}${upi}${bank}`;
+}
+function msgFor(o){
+  const m=admin?D.money[o.no]:null;
+  if(o.status==="New")return `Hi ${o.name} 🙏\nThank you for ordering from ${biz()}!\n\nOrder #${o.no}\n${itemsText(o,!!m)}${m?`\nTotal: ${rs(m.total)}\n\n${payText(m)}`:""}\n\nWe will dispatch soon 🍯`;
+  if(o.status==="Dispatched")return `Hi ${o.name}, your order #${o.no} has been dispatched 🚚\n${itemsText(o,false)}\nDelivery to: ${o.addr||"your address"}${m?`\n\n${payText(m)}`:""}`;
+  if(o.status==="Delivered")return `Hi ${o.name}, your ${biz()} order #${o.no} is delivered ✅\nRaw, unheated and lab-tested honey. Enjoy!\nPlease share a photo or a short review, it helps us a lot 🙏${m&&balOf(m)>0?`\n\n${payText(m)}`:""}`;
+  return `Hi ${o.name}, your order #${o.no} has been cancelled. Please message us if this is a mistake.`;
+}
+
+/* --- orders list --- */
+function payPill(m){if(!m)return "";const b=balOf(m),p=paidOf(m);if(b<=0)return `<span class="pill p-paid">Paid</span>`;if(p>0)return `<span class="pill p-part">Part paid</span>`;return `<span class="pill p-due">Due</span>`;}
+function renderOrders(){
+  $("orderform").hidden=!admin;
+  const fl=admin?["All","New","Dispatched","Delivered","Payment due","Cancelled"]:["All","New","Dispatched","Delivered"];
+  $("filters").innerHTML=fl.map(f=>`<button aria-pressed="${f===ofilter}" data-f="${f}">${f}</button>`).join("");
+  const q=$("o-search").value.trim().toLowerCase();
+  let list=Object.values(D.orders).sort((a,b)=>num(b.no)-num(a.no));
+  list=list.filter(o=>ofilter==="All"?o.status!=="Cancelled":ofilter==="Payment due"?(o.status!=="Cancelled"&&balOf(D.money[o.no])>0):o.status===ofilter);
+  if(q)list=list.filter(o=>(o.name||"").toLowerCase().includes(q)||String(o.phone||"").includes(q)||String(o.no).includes(q));
+  if(!list.length){$("orders").innerHTML=`<div class="empty">${Object.keys(D.orders).length?"No orders match.":(admin?"No orders yet. Add the first one above when a WhatsApp order comes in.":"No orders yet.")}</div>`;return;}
+  $("orders").innerHTML=list.slice(0,150).map(o=>{
+    const m=admin?D.money[o.no]:null;const cls={New:"p-new",Dispatched:"p-dis",Delivered:"p-del",Cancelled:"p-can"}[o.status];
+    const next={New:"Mark dispatched",Dispatched:"Mark delivered"}[o.status];
+    const lines=(o.items||[]).map(it=>{const l=m?.lines?.find(x=>x.pid===it.pid);return `<div><span>${esc(prodName(it.pid))} × ${it.qty}${l?` <span class="meta">@ ${rs(l.rate)}</span>`:""}</span>${l?`<span class="amt">${rs(l.qty*l.rate)}</span>`:""}</div>`;}).join("");
+    const money=m?`${num(m.delivery)?`<div><span class="meta">Delivery</span><span class="amt">+ ${rs(m.delivery)}</span></div>`:""}${num(m.discount)?`<div><span class="meta">Discount</span><span class="amt">− ${rs(m.discount)}</span></div>`:""}<div class="tot"><span>Total</span><span class="amt">${rs(m.total)}</span></div>${paidOf(m)?`<div><span class="meta">Paid ${(m.payments||[]).map(p=>`${rs(p.amt)} ${esc(p.mode)}`).join(", ")}</span><span class="amt">${rs(paidOf(m))}</span></div>`:""}${balOf(m)>0?`<div><span class="meta">Balance</span><span class="amt">${rs(balOf(m))}</span></div>`:""}`:"";
+    const payBox=m&&balOf(m)>0&&o.status!=="Cancelled"?`<div class="payrow"><span class="meta">Record payment</span><input type="number" min="1" id="pa-${o.no}" value="${balOf(m)}" aria-label="Amount"><select id="pm-${o.no}" aria-label="Mode">${["UPI","Cash","Bank"].map(x=>`<option ${x===m.mode?"selected":""}>${x}</option>`).join("")}</select><button class="btn" data-act="pay" data-no="${o.no}">Save payment</button></div>`:"";
+    return `<div class="card">
+      <div class="order-top"><div class="grow"><strong>#${o.no} · ${esc(o.name)}</strong>${o.example?` <span class="tag">Example</span>`:""}<div class="meta">${esc(o.type)} · ${fmtD(o.at)} · ${esc(o.addr||"No address")} · ${esc(o.phone||"")}</div></div>
+      <div class="row"><span class="pill ${cls}">${o.status}</span>${o.status!=="Cancelled"?payPill(m):""}</div></div>
+      <div class="lines">${lines}${money}</div>
+      ${payBox}
+      <div class="row">
+        ${next?`<button class="btn primary" data-act="next" data-no="${o.no}">${next}</button>`:""}
+        <a class="btn wa" href="${waLink(o.phone,msgFor(o))}" target="_blank" rel="noopener">Send on WhatsApp</a>
+        <button class="btn" data-act="copy" data-no="${o.no}">Copy message</button>
+        ${admin?`<button class="btn" data-act="bill" data-no="${o.no}">Bill</button>`:""}
+        ${admin&&o.status==="New"?`<button class="btn ghost" data-act="cancel" data-no="${o.no}">Cancel</button>`:""}
+        ${admin?`<button class="btn ${confirmDel===String(o.no)?"danger":"ghost"}" data-act="del" data-no="${o.no}">${confirmDel===String(o.no)?"Tap again to delete":"Delete"}</button>`:""}
+      </div></div>`;}).join("");
+}
+
+/* --- customers --- */
+function custStats(){
+  const st={};Object.values(D.orders).forEach(o=>{if(o.status==="Cancelled")return;const k=o.cid||o.phone;const s=st[k]||(st[k]={n:0,spent:0,due:0,last:""});s.n++;const m=D.money[o.no];if(m){s.spent+=num(m.total);s.due+=Math.max(0,balOf(m));}if((o.at||"")>s.last)s.last=o.at;});return st;
+}
+function renderCustomers(){
+  $("c-filters").innerHTML=["All","Customer","Wholesaler","Order Partner","Repeat","Has dues"].map(f=>`<button aria-pressed="${f===cfilter}" data-cf="${f}">${f}</button>`).join("");
+  const st=custStats();const q=$("c-search").value.trim().toLowerCase();
+  let list=Object.entries(D.customers).map(([id,c])=>({id,...c,s:st[id]||{n:0,spent:0,due:0,last:""}}));
+  if(cfilter==="Repeat")list=list.filter(c=>c.s.n>=2);else if(cfilter==="Has dues")list=list.filter(c=>c.s.due>0);else if(cfilter!=="All")list=list.filter(c=>c.type===cfilter);
+  if(q)list=list.filter(c=>(c.name||"").toLowerCase().includes(q)||String(c.phone||"").includes(q));
+  list.sort((a,b)=>(b.s.last||"").localeCompare(a.s.last||""));
+  if(!list.length){$("customers").innerHTML=`<div class="empty">${Object.keys(D.customers).length?"No customers match.":"Customers are added automatically when you save an order."}</div>`;return;}
+  $("customers").innerHTML=list.map(c=>`<div class="card">
+    <div class="order-top"><div class="grow"><strong>${esc(c.name)}</strong> ${c.s.n>=2?`<span class="tag">Repeat</span>`:""}<div class="meta">${esc(c.type)} · ${esc(c.phone)} · ${esc(c.addr||"")}</div></div>${c.s.due>0?`<span class="pill p-due">Due ${rs(c.s.due)}</span>`:""}</div>
+    <div class="row meta"><span>${c.s.n} order${c.s.n===1?"":"s"}</span><span>Spent <b class="amt">${rs(c.s.spent)}</b></span>${c.s.last?`<span>Last ${fmtD(c.s.last)}</span>`:""}</div>
+    <div class="row"><button class="btn primary" data-act="neworder" data-cid="${c.id}">New order</button><a class="btn wa" href="${waLink(c.phone,`Hi ${c.name} 🙏`)}" target="_blank" rel="noopener">WhatsApp</a>${c.s.due>0?`<a class="btn" href="${waLink(c.phone,`Hi ${c.name}, a gentle reminder: ${rs(c.s.due)} is pending for your ${biz()} orders.${D.cfg.upi?`\nUPI: ${D.cfg.upi}`:""}\nThank you 🙏`)}" target="_blank" rel="noopener">Send reminder</a>`:""}</div>
+  </div>`).join("");
+}
+
+/* --- stock --- */
+function renderStock(){
+  $("s-buyrow").hidden=!(admin&&$("s-src").value.startsWith("Bought"));
+  $("stock-head").innerHTML=`<tr><th>Product</th><th class="n">Jars</th><th class="n">Low at</th>${admin?`<th class="n">Customer</th><th class="n">Wholesale</th><th class="n">Partner</th>`:""}</tr>`;
+  const list=prodList();
+  $("stock-body").innerHTML=list.length?list.map(([id,p])=>{const low=num(p.stock)<=num(p.lowAt??10);const pr=D.prices[id]||{};return `<tr><td>${esc(p.name)}</td><td class="n ${low?"low":""}">${num(p.stock)}${low?" ⚠":""}</td><td class="n">${num(p.lowAt??10)}</td>${admin?`<td class="n">${rs(pr.c)}</td><td class="n">${rs(pr.w)}</td><td class="n">${rs(pr.p)}</td>`:""}</tr>`;}).join(""):`<tr><td colspan="6" class="meta">No products yet.</td></tr>`;
+  const log=Object.entries(D.stockin).sort((a,b)=>(b[1].at||"").localeCompare(a[1].at||"")).slice(0,30);
+  $("s-log").innerHTML=log.length?log.map(([,e])=>`<tr><td>${fmtD(e.at)}</td><td>${esc(prodName(e.pid))}</td><td class="n">+${num(e.qty)}</td><td>${esc(e.batch||"—")}${e.lab?`<div class="meta">Lab ${esc(e.lab)}</div>`:""}</td><td>${esc(e.source)}</td></tr>`).join(""):`<tr><td colspan="5" class="meta">No stock entries yet.</td></tr>`;
+}
+
+/* --- reports --- */
+function inPeriod(at){if(!at)return false;if(period==="all")return true;const d=new Date(at),n=new Date();if(period==="today")return d.toDateString()===n.toDateString();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();}
+function renderReports(){
+  $("r-period").innerHTML=[["today","Today"],["month","This month"],["all","All time"]].map(([k,l])=>`<button aria-pressed="${k===period}" data-p="${k}">${l}</button>`).join("");
+  const live=Object.values(D.orders).filter(o=>o.status!=="Cancelled");
+  const pOrders=live.filter(o=>inPeriod(o.at));
+  const sales=pOrders.reduce((a,o)=>a+num(D.money[o.no]?.total),0);
+  const modes={Cash:0,UPI:0,Bank:0};live.forEach(o=>(D.money[o.no]?.payments||[]).forEach(p=>{if(inPeriod(p.at))modes[p.mode]=(modes[p.mode]||0)+num(p.amt);}));
+  const collected=Object.values(modes).reduce((a,b)=>a+b,0);
+  const dues=live.reduce((a,o)=>a+Math.max(0,balOf(D.money[o.no])),0);
+  const prod={};let profit=0;pOrders.forEach(o=>(D.money[o.no]?.lines||[]).forEach(l=>{const r=prod[l.pid]||(prod[l.pid]={q:0,s:0,pf:0});const c=num(D.prices[l.pid]?.cost);r.q+=l.qty;r.s+=l.qty*l.rate;r.pf+=l.qty*(l.rate-c);profit+=l.qty*(l.rate-c);}));
+  const buys=Object.values(D.buys).filter(b=>inPeriod(b.at));const spent=buys.reduce((a,b)=>a+num(b.paid),0);
+  $("r-kpis").innerHTML=[["Orders",pOrders.length],["Sales",rs(sales)],["Collected",rs(collected)],["Pending dues (all)",rs(dues)],["Gross profit*",rs(profit)],["Honey bought",rs(spent)]].map(([k,v])=>`<div class="kpi"><span>${k}</span><b>${v}</b></div>`).join("");
+  $("r-modes").innerHTML=Object.entries(modes).map(([k,v])=>`<tr><td>${k}</td><td class="n">${rs(v)}</td></tr>`).join("")+`<tr><td><b>Total</b></td><td class="n"><b>${rs(collected)}</b></td></tr>`;
+  const pr=Object.entries(prod).sort((a,b)=>b[1].s-a[1].s);
+  $("r-prod").innerHTML=pr.length?pr.map(([id,r])=>`<tr><td>${esc(prodName(id))}</td><td class="n">${r.q}</td><td class="n">${rs(r.s)}</td><td class="n">${rs(r.pf)}</td></tr>`).join(""):`<tr><td colspan="4" class="meta">No sales in this period.</td></tr>`;
+  const st=custStats();const dl2=Object.entries(D.customers).map(([id,c])=>({c,s:st[id]})).filter(x=>x.s&&x.s.due>0).sort((a,b)=>b.s.due-a.s.due);
+  $("r-dues").innerHTML=dl2.length?dl2.map(({c,s})=>`<tr><td>${esc(c.name)}<div class="meta">${esc(c.type)}</div></td><td class="n">${s.n}</td><td class="n">${rs(s.due)}</td><td><a class="btn wa" href="${waLink(c.phone,`Hi ${c.name}, a gentle reminder: ${rs(s.due)} is pending for your ${biz()} orders.${D.cfg.upi?`\nUPI: ${D.cfg.upi}`:""}\nThank you 🙏`)}" target="_blank" rel="noopener">Remind</a></td></tr>`).join(""):`<tr><td colspan="4" class="meta">No pending dues.</td></tr>`;
+  $("r-buys").innerHTML=buys.length?buys.sort((a,b)=>(b.at||"").localeCompare(a.at||"")).map(b=>`<tr><td>${fmtD(b.at)}</td><td>${esc(b.seller||"—")}</td><td>${esc(prodName(b.pid))}</td><td class="n">${b.kg?num(b.kg*10)/10:"—"}</td><td class="n">${rs(b.paid)}</td></tr>`).join(""):`<tr><td colspan="5" class="meta">No purchases in this period.</td></tr>`;
+}
+
+/* --- ads --- */
+function renderAds(){
+  const pid=$("a-prod").value;const p=D.products[pid];if(!p){$("a-text").value="";$("a-cap").value="";return;}
+  const list=$("a-list").value,k=$("a-kind").value,off=num($("a-off").value);
+  const lvl={Customers:"c",Wholesalers:"w","Order Partners":"p"}[list];
+  const pr=num(D.prices[pid]?.[lvl]),np=Math.round(pr*(1-off/100));const B=biz();
+  const t={
+    fresh:`🍯 Fresh harvest is here!\n\n${p.name} straight from our own bee boxes. Raw, unheated and lab-tested.\nPrice: ${rs(pr)}${lvl!=="c"?" (trade rate)":""}\n\nReply ORDER to book yours.`,
+    offer:`🎉 Festival offer from ${B}\n\n${p.name}: ${rs(pr)} → ${rs(np)} (${off}% off)\nPure raw honey, lab-tested.\nOffer valid this week only.\n\nReply ORDER with quantity.`,
+    trust:`Why ${B}? 🐝\n✅ Raw and unheated\n✅ Lab-tested (report available)\n✅ From our own hives in Gujarat & Kashmir\n\n${p.name}: ${rs(pr)}\nReply LAB to get the test report.`,
+    restock:`📦 Back in stock: ${p.name}\nPrice: ${rs(pr)}${lvl!=="c"?" (trade rate)":""}\nLimited jars. Reply ORDER to reserve.`}[k];
+  $("a-text").value=t;
+  const tags="#ForegaHoney #RawHoney #PureHoney #UnheatedHoney #LabTested #Beekeeping #GujaratHoney #KashmirHoney #Shahad";
+  const cap={
+    fresh:`Fresh harvest from our hives 🐝🍯\n${p.name}, raw, unheated and lab-tested. Straight from the bee box to your home.\n\nOrder on WhatsApp${D.cfg.phone?`: ${D.cfg.phone}`:""} 📲\n\n${tags}`,
+    offer:`Festival offer 🎉 ${off}% off ${p.name}\nNow ${rs(Math.round(num(D.prices[pid]?.c)*(1-off/100)))} only. Raw, unheated, lab-tested honey.\n\nDM or WhatsApp${D.cfg.phone?` ${D.cfg.phone}`:""} to order 📲\n\n${tags}`,
+    trust:`Not all honey is the same 🍯\n✅ Raw, never heated\n✅ Lab-tested, report on request\n✅ From our own hives in Gujarat and Kashmir\n\nWhatsApp${D.cfg.phone?` ${D.cfg.phone}`:""} to order 📲\n\n${tags}`,
+    restock:`Back in stock 📦 ${p.name}\nLimited jars from this harvest. Raw, unheated, lab-tested.\n\nWhatsApp${D.cfg.phone?` ${D.cfg.phone}`:""} to reserve yours 📲\n\n${tags}`}[k];
+  $("a-cap").value=cap;
+  const type={Customers:"Customer",Wholesalers:"Wholesaler","Order Partners":"Order Partner"}[list];
+  const nums=Object.values(D.customers).filter(c=>c.type===type&&waNum(c.phone));
+  $("a-numsnote").textContent=`${nums.length} ${list.toLowerCase()} with a valid number. Copy them to build a WhatsApp broadcast list for this group.`;
+}
+
+/* --- flow price levels --- */
+function renderLevels(){
+  const first=prodList()[0];const pr=first?D.prices[first[0]]:null;
+  const L=[["Customer","c","Single jars for home use. Usually pays by UPI or cash."],["Wholesaler","w","Shops buying in bulk. Often pays by bank, sometimes in parts."],["Order Partner","p","Partners who collect orders for you."]];
+  $("levels").innerHTML=L.map(([n,k,t])=>`<div class="level"><b>${n}</b>${admin&&pr&&first?`<span class="amt">${rs(pr[k])}</span><span class="meta">${esc(first[1].name)}</span>`:""}<span class="meta">${t}</span></div>`).join("")+(admin?`<p class="note" style="grid-column:1/-1">Change prices in Settings → Products and prices.</p>`:"");
+}
+
+/* --- settings --- */
+function renderSettings(){
+  const c=D.cfg;const set=(id,v)=>{$(id).value=v??"";};
+  set("g-biz",c.bizName);set("g-co",c.company);set("g-addr",c.address);set("g-phone",c.phone);set("g-email",c.email);set("g-fssai",c.fssai);set("g-upi",c.upi);set("g-bank",c.bank);set("g-prefix",c.prefix||"FRG");set("g-gstin",c.gstin);$("g-gston").checked=!!c.gstOn;
+  const list=Object.entries(D.products).sort((a,b)=>(a[1].order??0)-(b[1].order??0));
+  $("p-list").innerHTML=list.map(([id,p])=>prodEditor(id,p,D.prices[id]||{})).join("")||`<p class="note">No products yet.</p>`;
+}
+function prodEditor(id,p,pr){
+  return `<div class="prodedit" data-pid="${id}">
+    <div class="row"><label>Name<input data-k="name" value="${esc(p.name)}"></label><label class="chk"><input type="checkbox" data-k="active" ${p.active!==false?"checked":""}> Selling</label></div>
+    <div class="row"><label class="sm">Customer ₹<input data-k="c" type="number" min="0" value="${num(pr.c)}"></label><label class="sm">Wholesale ₹<input data-k="w" type="number" min="0" value="${num(pr.w)}"></label><label class="sm">Partner ₹<input data-k="p" type="number" min="0" value="${num(pr.p)}"></label><label class="sm">Cost/jar ₹<input data-k="cost" type="number" min="0" value="${num(pr.cost)}"></label></div>
+    <div class="row"><label class="sm">Low stock at<input data-k="lowAt" type="number" min="0" value="${num(p.lowAt??10)}"></label><label class="sm">HSN<input data-k="hsn" value="${esc(p.hsn||"")}"></label><label class="sm">GST %<input data-k="gst" type="number" min="0" step="0.5" value="${+pr.gst||0}"></label></div>
+  </div>`;
+}
+
+/* ---------- bill ---------- */
+function billData(no){
+  const o=D.orders[no],m=D.money[no];if(!o||!m)return null;const gstOn=!!D.cfg.gstOn;
+  const lines=(m.lines||[]).map(l=>{const amt=l.qty*l.rate;const g=+(D.prices[l.pid]?.gst||0);const taxable=gstOn&&g?amt/(1+g/100):amt;return{...l,name:prodName(l.pid),hsn:D.products[l.pid]?.hsn||"",amt,g,taxable,tax:amt-taxable};});
+  const tax=lines.reduce((a,l)=>a+l.tax,0);
+  return{o,m,lines,gstOn,tax,paid:paidOf(m),bal:balOf(m)};
+}
+function billText(no){
+  const b=billData(no);if(!b)return "";const c=D.cfg;
+  return `*${biz()}*${c.company?`\n${c.company}`:""}${c.fssai?`\nFSSAI Lic. ${c.fssai}`:""}${c.gstOn&&c.gstin?`\nGSTIN: ${c.gstin}`:""}\n\nBill: ${inv(no)}\nDate: ${fmtD(b.o.at)} ${new Date(b.o.at||Date.now()).getFullYear()}\nTo: ${b.o.name}\n\n${b.lines.map(l=>`${l.name} × ${l.qty} @ ${rs(l.rate)} = ${rs(l.amt)}`).join("\n")}${num(b.m.delivery)?`\nDelivery: ${rs(b.m.delivery)}`:""}${num(b.m.discount)?`\nDiscount: −${rs(b.m.discount)}`:""}${b.gstOn&&b.tax?`\n(Includes GST ${rs(b.tax)})`:""}\n*Total: ${rs(b.m.total)}*\nPaid: ${rs(b.paid)}${b.bal>0?`\nBalance: ${rs(b.bal)}`:""}\n\nRaw · Unheated · Lab-tested 🍯\nThank you!`;
+}
+function openBill(no){
+  const b=billData(no);if(!b){toast("Bill details are still loading.");return;}const c=D.cfg;
+  $("sheet").innerHTML=`<div class="sheet-bg" id="sheetbg"><div class="sheet" role="dialog" aria-label="Bill">
+    <div class="row"><h2 class="grow">Bill ${esc(inv(no))}</h2><button class="btn ghost" data-act="closebill">Close</button></div>
+    <div class="bill">
+      <div class="bill-head"><div><span class="logo-chip" style="display:inline-flex;margin-bottom:6px"><img src="${$("logo").src}" alt="${esc(biz())}" style="height:34px"></span><br><b>${esc(biz())}</b><div class="meta">${esc(c.company||"")}${c.address?`<br>${esc(c.address)}`:""}${c.phone?`<br>Ph ${esc(c.phone)}`:""}${c.email?`<br>${esc(c.email)}`:""}${c.fssai?`<br>FSSAI Lic. ${esc(c.fssai)}`:""}${c.gstOn&&c.gstin?`<br>GSTIN ${esc(c.gstin)}`:""}</div></div>
+      <div class="meta" style="text-align:right">Bill ${esc(inv(no))}<br>${fmtD(b.o.at)} ${new Date(b.o.at||Date.now()).getFullYear()}<br>${b.gstOn?"Tax invoice":"Bill of sale"}</div></div>
+      <div><span class="meta">Bill to</span><br><b>${esc(b.o.name)}</b> <span class="meta">(${esc(b.o.type)})</span><br><span class="meta">${esc(b.o.phone||"")} ${esc(b.o.addr||"")}</span></div>
+      <div class="tbl"><table><thead><tr><th>Item</th>${b.gstOn?"<th>HSN</th>":""}<th class="n">Qty</th><th class="n">Rate</th><th class="n">Amount</th></tr></thead><tbody>
+      ${b.lines.map(l=>`<tr><td>${esc(l.name)}</td>${b.gstOn?`<td>${esc(l.hsn)}</td>`:""}<td class="n">${l.qty}</td><td class="n">${rs(l.rate)}</td><td class="n">${rs(l.amt)}</td></tr>`).join("")}</tbody></table></div>
+      <div class="lines">
+        ${num(b.m.delivery)?`<div><span>Delivery</span><span class="amt">${rs(b.m.delivery)}</span></div>`:""}
+        ${num(b.m.discount)?`<div><span>Discount</span><span class="amt">− ${rs(b.m.discount)}</span></div>`:""}
+        ${b.gstOn&&b.tax?`<div><span class="meta">Taxable value</span><span class="amt">${rs(b.lines.reduce((a,l)=>a+l.taxable,0))}</span></div><div><span class="meta">CGST</span><span class="amt">${rs(b.tax/2)}</span></div><div><span class="meta">SGST</span><span class="amt">${rs(b.tax/2)}</span></div>`:""}
+        <div class="tot"><span>Total</span><span class="amt">${rs(b.m.total)}</span></div>
+        <div><span class="meta">Paid</span><span class="amt">${rs(b.paid)}</span></div>
+        ${b.bal>0?`<div><span class="meta">Balance due</span><span class="amt">${rs(b.bal)}</span></div>`:""}
+      </div>
+      <div class="meta">Raw · Unheated · Lab-tested honey${c.upi&&b.bal>0?` · Pay by UPI: ${esc(c.upi)}`:""}</div>
+    </div>
+    <div class="row">
+      ${dl?`<button class="btn primary" data-act="pdf" data-no="${no}">Share PDF</button>`:""}
+      <a class="btn wa" href="${waLink(b.o.phone,billText(no))}" target="_blank" rel="noopener">Send bill on WhatsApp</a>
+      <button class="btn" data-act="copybill" data-no="${no}">Copy bill text</button>
+    </div>
+    ${dl?`<p class="note">Share PDF opens your phone's share menu. Pick WhatsApp and the customer's chat.</p>`:""}
+  </div></div>`;
+  $("sheet").hidden=false;
+}
+async function savePdf(no){
+  const b=billData(no);if(!b)return;const c=D.cfg;const R=n=>"Rs. "+Math.round(n).toLocaleString("en-IN");
+  const doc=new MiniPDF({unit:"mm",format:"a5"});let y=16;const L=12,Rx=136;
+  try{doc.addImage($("logo").src,"PNG",L,7,40,14.5);y=30;}catch(e){}
+  doc.setFont("helvetica","bold");doc.setFontSize(13);doc.text(biz(),L,y);
+  doc.setFontSize(10);doc.text(b.gstOn?"TAX INVOICE":"BILL",Rx,16,{align:"right"});
+  doc.setFont("helvetica","normal");doc.setFontSize(9);y+=5;
+  [c.company,c.address,[c.phone?`Ph: ${c.phone}`:"",c.email].filter(Boolean).join("  |  "),c.fssai?`FSSAI Lic. No: ${c.fssai}`:"",b.gstOn&&c.gstin?`GSTIN: ${c.gstin}`:""].filter(Boolean).forEach(t=>{doc.text(String(t),L,y);y+=4;});
+  doc.text(`Bill No: ${inv(no)}`,Rx,21,{align:"right"});doc.text(`Date: ${new Date(b.o.at||Date.now()).toLocaleDateString("en-IN")}`,Rx,25,{align:"right"});
+  y=Math.max(y,34)+3;doc.line(L,y,Rx,y);y+=6;
+  doc.setFont("helvetica","bold");doc.text("Bill to",L,y);doc.setFont("helvetica","normal");y+=4;
+  doc.text(`${b.o.name} (${b.o.type})`,L,y);y+=4;if(b.o.phone){doc.text(String(b.o.phone),L,y);y+=4;}if(b.o.addr){doc.text(String(b.o.addr),L,y);y+=4;}
+  y+=3;doc.setFont("helvetica","bold");doc.text("Item",L,y);if(b.gstOn)doc.text("HSN",66,y);doc.text("Qty",88,y,{align:"right"});doc.text("Rate",108,y,{align:"right"});doc.text("Amount",Rx,y,{align:"right"});
+  y+=2;doc.line(L,y,Rx,y);y+=5;doc.setFont("helvetica","normal");
+  b.lines.forEach(l=>{doc.text(doc.splitTextToSize(l.name,b.gstOn?52:72)[0],L,y);if(b.gstOn)doc.text(String(l.hsn||""),66,y);doc.text(String(l.qty),88,y,{align:"right"});doc.text(R(l.rate),108,y,{align:"right"});doc.text(R(l.amt),Rx,y,{align:"right"});y+=6;});
+  doc.line(L,y-2,Rx,y-2);y+=3;
+  const row=(k,v,bold)=>{doc.setFont("helvetica",bold?"bold":"normal");doc.text(k,100,y,{align:"right"});doc.text(v,Rx,y,{align:"right"});y+=5;};
+  if(num(b.m.delivery))row("Delivery",R(b.m.delivery));if(num(b.m.discount))row("Discount","- "+R(b.m.discount));
+  if(b.gstOn&&b.tax){row("Taxable value",R(b.lines.reduce((a,l)=>a+l.taxable,0)));row("CGST",R(b.tax/2));row("SGST",R(b.tax/2));}
+  row("Total",R(b.m.total),true);row("Paid",R(b.paid));if(b.bal>0)row("Balance due",R(b.bal),true);
+  y+=6;doc.setFont("helvetica","normal");doc.setFontSize(8);
+  if(c.upi&&b.bal>0){doc.text(`Pay by UPI: ${c.upi}`,L,y);y+=4;}if(c.bank&&b.bal>0){doc.text(`Bank: ${c.bank}`,L,y);y+=4;}
+  doc.text("Raw · Unheated · Lab-tested honey. Thank you for your order!".replace(/·/g,"-"),L,y);
+  try{await dl.save({filename:`${inv(no)}.pdf`,data:doc.output("blob")});toast("PDF ready");}catch(e){if(e&&e.code!=="declined")toast("Couldn't save the PDF here.");}
+}
+
+/* ---------- actions ---------- */
+async function saveOrder(){
+  if(!db)return;const name=$("o-name").value.trim();if(!name){toast("Enter the customer name");return;}
+  const f=formCalc();if(!f.lines.length){toast("Add at least one item");return;}
+  const phone=$("o-phone").value.trim(),type=$("o-type").value,addr=$("o-addr").value.trim(),mode=$("o-pay").value,paidNow=Math.min(num($("o-paid").value),f.total);
+  const no=String(Math.max(1000,...Object.values(D.orders).map(o=>num(o.no)))+1);
+  const digits=phone.replace(/\D/g,"").slice(-10);
+  let cid=Object.entries(D.customers).find(([,c])=>digits&&String(c.phone||"").replace(/\D/g,"").slice(-10)===digits)?.[0]
+        ||(!digits?Object.entries(D.customers).find(([,c])=>c.name.toLowerCase()===name.toLowerCase())?.[0]:null);
+  $("o-add").disabled=true;
+  const ok=await W(async()=>{
+    if(cid)await db.doc("customers/"+cid).update({name,phone:phone||D.customers[cid].phone,type,addr:addr||D.customers[cid].addr||""});
+    else{const ref=db.collection("customers").doc();cid=ref.id;await ref.set({name,phone,type,addr,at:nowISO()});}
+    await db.doc("orders/"+no).set({no:+no,cid,name,phone,type,addr,items:f.lines.map(l=>({pid:l.pid,qty:l.qty})),status:"New",at:nowISO()});
+    await db.doc("fin/m/money/"+no).set({lines:f.lines,delivery:f.del,discount:f.disc,total:f.total,mode,payments:paidNow>0?[{mode,amt:paidNow,at:nowISO()}]:[]});
+  },`Order #${no} saved`);
+  $("o-add").disabled=false;
+  if(ok){$("o-name").value="";$("o-phone").value="";$("o-addr").value="";$("o-del").value=0;$("o-disc").value=0;$("o-paid").value=0;formItems=[{pid:"",qty:1}];ofilter="All";schedule();}
+}
+async function nextStatus(no){
+  const o=D.orders[no];if(!o)return;
+  if(o.status==="New"){
+    const need={};(o.items||[]).forEach(i=>need[i.pid]=(need[i.pid]||0)+num(i.qty));
+    for(const[pid,q]of Object.entries(need)){const p=D.products[pid];if(!p||num(p.stock)<q){toast(`Only ${num(p?.stock)} jars of ${prodName(pid)} left`);return;}}
+    await W(async()=>{for(const[pid,q]of Object.entries(need))await db.doc("products/"+pid).update({stock:num(D.products[pid].stock)-q});await db.doc("orders/"+no).update({status:"Dispatched",dispAt:nowISO()});},"Dispatched, stock updated");
+  }else if(o.status==="Dispatched")await W(()=>db.doc("orders/"+no).update({status:"Delivered",delAt:nowISO()}),"Marked delivered");
+}
+async function recordPay(no){
+  const m=D.money[no];if(!m)return;const amt=num($("pa-"+no).value),mode=$("pm-"+no).value;if(amt<=0){toast("Enter the amount received");return;}
+  await W(()=>db.doc("fin/m/money/"+no).update({payments:[...(m.payments||[]),{mode,amt,at:nowISO()}]}),`${rs(amt)} received by ${mode}`);
+}
+async function delOrder(no){
+  if(confirmDel!==String(no)){confirmDel=String(no);renderOrders();setTimeout(()=>{if(confirmDel===String(no)){confirmDel=null;renderOrders();}},4000);return;}
+  confirmDel=null;await W(async()=>{await db.doc("fin/m/money/"+no).delete();await db.doc("orders/"+no).delete();},`Order #${no} deleted`);
+}
+async function addStock(){
+  const pid=$("s-prod").value,qty=num($("s-qty").value);if(!D.products[pid]||qty<1){toast("Choose a product and number of jars");return;}
+  const src=$("s-src").value,bought=src.startsWith("Bought");const ref=db.collection("stockin").doc();
+  const ok=await W(async()=>{
+    await db.doc("products/"+pid).update({stock:num(D.products[pid].stock)+qty});
+    await ref.set({pid,qty,source:src,batch:$("s-batch").value.trim(),lab:$("s-lab").value.trim(),at:nowISO()});
+    if(admin&&bought)await db.doc("fin/m/buys/"+ref.id).set({pid,qty,seller:$("s-seller").value.trim(),kg:+$("s-kg").value||0,paid:num($("s-paidamt").value),at:nowISO()});
+  },`${qty} jars added`);
+  if(ok){["s-batch","s-lab","s-seller","s-kg","s-paidamt"].forEach(id=>$(id).value="");}
+}
+async function saveSettings(){
+  await W(()=>db.doc("cfg/main").set({bizName:$("g-biz").value.trim(),company:$("g-co").value.trim(),address:$("g-addr").value.trim(),phone:$("g-phone").value.trim(),email:$("g-email").value.trim(),fssai:$("g-fssai").value.trim(),upi:$("g-upi").value.trim(),bank:$("g-bank").value.trim(),prefix:$("g-prefix").value.trim()||"FRG",gstin:$("g-gstin").value.trim(),gstOn:$("g-gston").checked}),"Business details saved");
+  dirtySettings=false;
+}
+async function saveProducts(){
+  const cards=[...$("p-list").querySelectorAll("[data-pid]")];
+  const ok=await W(async()=>{for(const[i,card]of cards.entries()){
+    const g=k=>card.querySelector(`[data-k="${k}"]`);const pid=card.dataset.pid;const name=g("name").value.trim();if(!name)continue;
+    const isNew=!D.products[pid];
+    const pdata={name,active:g("active").checked,lowAt:num(g("lowAt").value),hsn:g("hsn").value.trim(),order:i};
+    if(isNew)await db.doc("products/"+pid).set({...pdata,stock:0});else await db.doc("products/"+pid).update(pdata);
+    await db.doc("fin/m/prices/"+pid).set({c:num(g("c").value),w:num(g("w").value),p:num(g("p").value),cost:num(g("cost").value),gst:+g("gst").value||0});
+  }},"Products saved");
+  if(ok){dirtySettings=false;schedule();}
+}
+function startOrderFor(cid){
+  const c=D.customers[cid];if(!c)return;tab="orders";renderNav();$("o-name").value=c.name;$("o-phone").value=c.phone||"";$("o-type").value=c.type||"Customer";$("o-addr").value=c.addr||"";renderAll();$("orderform").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ---------- events ---------- */
+$("nav").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(!b)return;tab=b.dataset.tab;if(tab==="settings")dirtySettings=false;renderAll();});
+$("filters").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(b){ofilter=b.dataset.f;renderOrders();}});
+$("c-filters").addEventListener("click",e=>{const b=e.target.closest("[data-cf]");if(b){cfilter=b.dataset.cf;renderCustomers();}});
+$("r-period").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(b){period=b.dataset.p;renderReports();}});
+$("o-search").addEventListener("input",renderOrders);$("c-search").addEventListener("input",renderCustomers);
+$("o-items").addEventListener("input",e=>{const el=e.target.closest("[data-fi]");if(!el)return;const it=formItems[+el.dataset.fi];if(el.dataset.fk==="qty")it.qty=el.value;else{it.pid=el.value;}renderFormSum();});
+$("o-items").addEventListener("click",e=>{const b=e.target.closest("[data-rm]");if(b){formItems.splice(+b.dataset.rm,1);renderFormItems();renderFormSum();}});
+$("o-additem").addEventListener("click",()=>{formItems.push({pid:prodList()[0]?.[0]||"",qty:1});renderFormItems();renderFormSum();});
+$("o-type").addEventListener("change",()=>{renderFormItems();renderFormSum();});
+["o-del","o-disc"].forEach(id=>$(id).addEventListener("input",renderFormSum));
+$("o-name").addEventListener("change",()=>{const n=$("o-name").value.trim().toLowerCase();const hit=Object.values(D.customers).find(c=>c.name.toLowerCase()===n);if(hit){if(!$("o-phone").value)$("o-phone").value=hit.phone||"";$("o-type").value=hit.type||"Customer";if(!$("o-addr").value)$("o-addr").value=hit.addr||"";renderFormItems();renderFormSum();}});
+$("o-add").addEventListener("click",saveOrder);
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]");if(!b)return;const no=b.dataset.no;
+  ({next:()=>nextStatus(no),pay:()=>recordPay(no),copy:()=>copy(msgFor(D.orders[no]),"Message copied"),bill:()=>openBill(no),
+    cancel:()=>W(()=>db.doc("orders/"+no).update({status:"Cancelled"}),"Order cancelled"),del:()=>delOrder(no),
+    closebill:()=>{$("sheet").hidden=true;$("sheet").innerHTML="";},pdf:()=>savePdf(no),copybill:()=>copy(billText(no),"Bill copied"),
+    neworder:()=>startOrderFor(b.dataset.cid)}[b.dataset.act]||(()=>{}))();
+});
+$("sheet").addEventListener("click",e=>{if(e.target.id==="sheetbg"){$("sheet").hidden=true;$("sheet").innerHTML="";}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("sheet").hidden){$("sheet").hidden=true;$("sheet").innerHTML="";}});
+$("s-src").addEventListener("change",renderStock);$("s-add").addEventListener("click",addStock);
+["a-list","a-kind","a-prod","a-off"].forEach(id=>$(id).addEventListener("input",renderAds));
+$("a-copy").addEventListener("click",()=>copy($("a-text").value,"Message copied"));
+$("a-copycap").addEventListener("click",()=>copy($("a-cap").value,"Caption copied"));
+$("a-copynums").addEventListener("click",()=>{const type={Customers:"Customer",Wholesalers:"Wholesaler","Order Partners":"Order Partner"}[$("a-list").value];const n=Object.values(D.customers).filter(c=>c.type===type&&waNum(c.phone)).map(c=>`${c.name}: +${waNum(c.phone)}`);if(!n.length){toast("No numbers in this group yet");return;}copy(n.join("\n"),`${n.length} numbers copied`);});
+$("tab-settings").addEventListener("input",()=>{dirtySettings=true;});
+$("g-save").addEventListener("click",saveSettings);$("p-save").addEventListener("click",saveProducts);
+$("p-new").addEventListener("click",()=>{dirtySettings=true;const id="p"+Date.now().toString(36);const empty=$("p-list").querySelector("p.note");if(empty)empty.remove();$("p-list").insertAdjacentHTML("beforeend",prodEditor(id,{name:"",active:true,lowAt:10,hsn:"0409"},{}));$("p-list").lastElementChild.querySelector("input").focus();});
+
+/* ---------- phone storage (IndexedDB, falls back to localStorage) ---------- */
+const SEED={"cfg": {"main": {"bizName": "FoRega Honey", "company": "Anees Enterprise", "address": "Haripura, Aroda, Idar, Sabarkantha, Gujarat - 383110", "phone": "+91 94095 23131", "email": "foregaindia@gmail.com", "fssai": "20724020000378", "upi": "", "bank": "", "prefix": "FRG", "gstin": "", "gstOn": false}}, "products": {"r250": {"name": "Raw Honey 250 g", "stock": 42, "lowAt": 15, "hsn": "0409", "active": true, "order": 0}, "r500": {"name": "Raw Honey 500 g", "stock": 30, "lowAt": 12, "hsn": "0409", "active": true, "order": 1}, "r1k": {"name": "Raw Honey 1 kg", "stock": 8, "lowAt": 10, "hsn": "0409", "active": true, "order": 2}, "k500": {"name": "Kashmir Acacia 500 g", "stock": 15, "lowAt": 8, "hsn": "0409", "active": true, "order": 3}}, "fin/m/prices": {"r250": {"c": 220, "w": 170, "p": 185, "cost": 110, "gst": 0}, "r500": {"c": 420, "w": 330, "p": 360, "cost": 210, "gst": 0}, "r1k": {"c": 799, "w": 640, "p": 690, "cost": 400, "gst": 0}, "k500": {"c": 520, "w": 410, "p": 450, "cost": 270, "gst": 0}}, "customers": {"ex1": {"name": "Example – Ramesh Patel", "phone": "", "type": "Customer", "addr": "Navrangpura, Ahmedabad", "at": "2026-11-06T06:00:00.000Z"}, "ex2": {"name": "Example – Shree Kirana Stores", "phone": "", "type": "Wholesaler", "addr": "Surat", "at": "2026-11-07T06:00:00.000Z"}}, "orders": {"1001": {"no": 1001, "cid": "ex1", "name": "Example – Ramesh Patel", "phone": "", "type": "Customer", "addr": "Navrangpura, Ahmedabad", "items": [{"pid": "r500", "qty": 2}, {"pid": "r250", "qty": 1}], "status": "Delivered", "at": "2026-11-06T06:00:00.000Z", "example": true}, "1002": {"no": 1002, "cid": "ex2", "name": "Example – Shree Kirana Stores", "phone": "", "type": "Wholesaler", "addr": "Surat", "items": [{"pid": "r1k", "qty": 12}], "status": "Dispatched", "at": "2026-11-07T06:00:00.000Z", "example": true}}, "fin/m/money": {"1001": {"lines": [{"pid": "r500", "qty": 2, "rate": 420}, {"pid": "r250", "qty": 1, "rate": 220}], "delivery": 50, "discount": 0, "total": 1110, "mode": "UPI", "payments": [{"mode": "UPI", "amt": 1110, "at": "2026-11-06T08:00:00.000Z"}]}, "1002": {"lines": [{"pid": "r1k", "qty": 12, "rate": 640}], "delivery": 0, "discount": 180, "total": 7500, "mode": "Bank", "payments": [{"mode": "Bank", "amt": 4000, "at": "2026-11-07T09:00:00.000Z"}]}}, "stockin": {}, "fin/m/buys": {}};
+const STORE={};const subs=[];let saveT=null;
+function idbOpen(){return new Promise((res,rej)=>{try{const r=indexedDB.open("forega",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}});}
+async function idbGet(k){try{const d=await Promise.race([idbOpen(),new Promise((_,rej)=>setTimeout(()=>rej(new Error("slow")),2500))]);return await new Promise(res=>{const t=d.transaction("kv").objectStore("kv").get(k);t.onsuccess=()=>res(t.result??null);t.onerror=()=>res(null);});}catch(e){try{return localStorage.getItem("forega-"+k);}catch(_){return null;}}}
+async function idbPut(k,v){try{const d=await idbOpen();await new Promise((res,rej)=>{const tx=d.transaction("kv","readwrite");tx.objectStore("kv").put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}catch(e){try{localStorage.setItem("forega-"+k,v);}catch(_){toast("Phone storage is full. Take a backup and delete old orders.");}}}
+function persist(){return idbPut("data",JSON.stringify(STORE));}
+function changed(c){subs.forEach(x=>{if(c===null||x.coll===c)x.fire();});clearTimeout(saveT);saveT=setTimeout(persist,150);}
+const snapDoc=(id,d)=>({id,exists:!!d,data:()=>d,metadata:{fromCache:false,hasPendingWrites:false}});
+const clone=o=>JSON.parse(JSON.stringify(o));
+const LDB={
+  doc(path){const k=path.lastIndexOf("/"),c=path.slice(0,k),id=path.slice(k+1);return{id,path,
+    async get(){return snapDoc(id,STORE[c]?.[id]);},
+    async set(d){(STORE[c]||(STORE[c]={}))[id]=clone(d);changed(c);},
+    async update(d){const cur=STORE[c]?.[id];if(!cur)throw{code:"invalid_argument"};STORE[c][id]={...cur,...clone(d)};changed(c);},
+    async delete(){if(STORE[c]&&STORE[c][id]){delete STORE[c][id];changed(c);}},
+    onSnapshot(next){const x={coll:c,fire:()=>next(snapDoc(id,STORE[c]?.[id]))};subs.push(x);setTimeout(x.fire,0);return()=>{};}};},
+  collection(c){return{path:c,
+    doc(id){return LDB.doc(c+"/"+(id||("x"+Date.now().toString(36)+Math.random().toString(36).slice(2,7))));},
+    onSnapshot(next){const x={coll:c,fire:()=>{const o=STORE[c]||{};next({docs:Object.entries(o).map(([id,d])=>snapDoc(id,d)),size:Object.keys(o).length,metadata:{fromCache:false}});}};subs.push(x);setTimeout(x.fire,0);return()=>{};}};}
+};
+async function saveFile({filename,data}){
+  const blob=data instanceof Blob?data:new Blob([data],{type:filename.endsWith(".json")?"application/json":"application/octet-stream"});
+  const type=filename.endsWith(".pdf")?"application/pdf":blob.type;
+  try{const file=new File([blob],filename,{type});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:filename});return{status:"saved"};}catch(e){if(e&&e.name==="AbortError")throw{code:"declined"};}}}catch(e){if(e&&e.code==="declined")throw e;}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);return{status:"saved"};
+}
+/* backup / restore */
+async function showLast(){const t=await idbGet("lastBackup");$("bk-last").textContent=t?`Last backup: ${new Date(t).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}`:"No backup taken yet";}
+$("bk-save").addEventListener("click",async()=>{
+  const d=new Date();const name=`FoRega-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.json`;
+  try{await saveFile({filename:name,data:JSON.stringify({app:"forega-desk",version:1,at:d.toISOString(),data:STORE})});await idbPut("lastBackup",d.toISOString());showLast();toast("Backup ready. Save it to Drive or WhatsApp.");}
+  catch(e){if(!e||e.code!=="declined")toast("Couldn't make the backup file.");}
+});
+let pending=null,armed=false;
+$("bk-file").addEventListener("change",async e=>{
+  pending=null;armed=false;$("bk-restore").disabled=true;$("bk-restore").textContent="Restore";
+  const f=e.target.files[0];if(!f)return;
+  try{const j=JSON.parse(await f.text());if(j.app!=="forega-desk"||!j.data||!j.data.orders&&!j.data.products)throw 0;pending=j;$("bk-restore").disabled=false;
+    toast(`Backup from ${new Date(j.at).toLocaleDateString("en-IN")} with ${Object.keys(j.data.orders||{}).length} orders`);}
+  catch(_){toast("That file isn't a FoRega backup.");}
+});
+$("bk-restore").addEventListener("click",async()=>{
+  if(!pending)return;
+  if(!armed){armed=true;$("bk-restore").textContent="Tap again to replace all data";setTimeout(()=>{armed=false;$("bk-restore").textContent="Restore";},5000);return;}
+  Object.keys(STORE).forEach(k=>delete STORE[k]);Object.assign(STORE,clone(pending.data));await persist();changed(null);
+  pending=null;armed=false;$("bk-file").value="";$("bk-restore").disabled=true;$("bk-restore").textContent="Restore";dirtySettings=false;toast("Backup restored");renderAll();
+});
+
+/* ---------- start ---------- */
+renderNav();renderStrip();
+(async()=>{
+  const saved=await idbGet("data");
+  let data=null;try{data=saved?JSON.parse(saved):null;}catch(_){data=null;}
+  Object.assign(STORE,data||clone(SEED));if(!data)persist();
+  db=LDB;admin=true;dl={save:saveFile};
+  $("staffnote").hidden=true;setConn("");
+  const sub=(path,key)=>db.collection(path).onSnapshot(s=>{const o={};s.docs.forEach(x=>{o[x.id]=x.data();});D[key]=o;schedule();});
+  db.doc("cfg/main").onSnapshot(s=>{D.cfg=s.exists?s.data():{};schedule();});
+  sub("products","products");sub("customers","customers");sub("orders","orders");sub("stockin","stockin");
+  sub("fin/m/prices","prices");sub("fin/m/money","money");sub("fin/m/buys","buys");
+  showLast();
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(_){}
+  if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+</body></html>
